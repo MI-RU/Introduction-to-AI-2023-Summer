@@ -6,36 +6,42 @@ import numpy as np
 import pandas as pd
 from sklearn.datasets import load_digits
 
+components = 10
+
 # Load dataset
 digits = load_digits()
 X = digits.data
 y = digits.target
 
-# PCA
-# n_components: Number of components to keep, if n_components is not set all components are kept
-pca = PCA(n_components=10, random_state=42)
-X_pca = pca.fit_transform(X)
+# PCA Digit 0 to 9
+for digit in range(10):
+    globals()[f'X_{digit}'] = X[y == digit]
+    globals()[f'pca_{digit}'] = PCA(n_components=components, random_state=42)
+    globals()[f'X_{digit}_pca'] = globals()[f'pca_{digit}'].fit_transform(globals()[f'X_{digit}'])
+    globals()[f'X_{digit}_pca_inv'] = globals()[f'pca_{digit}'].inverse_transform(globals()[f'X_{digit}_pca'])
 
 # Plot MNIST each digit
 # 0 ~ 9
-for i in range (10):
+for digit in range (10):
     plt.figure(figsize=(15, 3))
-    # Compare Image
-    # Original Image
-    var_original = np.var(X[i])
-    plt.subplot(1, 3, 1)
-    plt.imshow(X[i].reshape(8, 8), cmap='gray')
-    plt.title(f'Original Image (Variance: {var_original:.2f}))')
-    
-    # inverse-PCA Reconstructed Image
-    var_pca = np.var(pca.inverse_transform(X_pca[i]))
-    plt.subplot(1, 3, 2)
-    plt.imshow(pca.inverse_transform(X_pca[i]).reshape(8, 8), cmap='gray')
-    plt.title(f'inverse-PCA Reconstructed Image (Variance: {var_pca:.2f})')
 
-    # Difference
-    similarity = np.sum((X[i] - pca.inverse_transform(X_pca[i])) ** 2)  # MSE
-    plt.subplot(1, 3, 3)
-    plt.imshow(X[i].reshape(8, 8) - pca.inverse_transform(X_pca[i]).reshape(8, 8), cmap='gray')
-    plt.title(f'Difference (MSE: {similarity:.2f})')
+    # Original
+    plt.subplot(1, 4, 1)
+    plt.imshow(globals()[f'X_{digit}'][0].reshape(8, 8), cmap='gray')    
+    plt.title('Original')
+
+    # PCA Inverse
+    plt.subplot(1, 4, 2)
+    plt.imshow(globals()[f'X_{digit}_pca_inv'][0].reshape(8, 8), cmap='gray')
+    plt.title('PCA')
+    
+    # PCA
+    plt.subplot(1, 4, 3)
+    plt.imshow(globals()[f'X_{digit}_pca'][0].reshape(1, components), cmap='gray')
+    plt.title(f'PCA (n_components={components})')
+    
+    # Difference MSE
+    plt.subplot(1, 4, 4)
+    plt.imshow((globals()[f'X_{digit}'][0] - globals()[f'X_{digit}_pca_inv'][0]).reshape(8, 8), cmap='gray')
+    plt.title(f'Difference (MSE): {np.sum((globals()[f"X_{digit}"][0] - globals()[f"X_{digit}_pca_inv"][0]) ** 2):.2f}')
     plt.show()
